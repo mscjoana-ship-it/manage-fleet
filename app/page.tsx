@@ -1,7 +1,7 @@
 'use client';
-export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 export interface Unit {
   id?: string;
@@ -40,6 +40,7 @@ export default function FleetDashboard() {
   }, []);
 
   async function fetchUnits() {
+    const supabase = getSupabase();
     const { data, error } = await (supabase.from('fleet_units') as any)
       .select('*')
       .order('created_at', { ascending: false });
@@ -67,6 +68,7 @@ export default function FleetDashboard() {
       counter_total: Number(formData.counter_total),
     };
 
+    const supabase = getSupabase();
     const { error } = await (supabase.from('fleet_units') as any).insert([payload]);
 
     setLoading(false);

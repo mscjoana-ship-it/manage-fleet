@@ -1,15 +1,28 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const globalForSupabase = globalThis as unknown as {
-  supabase: ReturnType<typeof createClient>;
+  supabase: SupabaseClient | undefined;
 };
 
-export const supabase =
-  globalForSupabase.supabase || createClient(supabaseUrl, supabaseAnonKey);
+export function getSupabase(): SupabaseClient {
+  if (globalForSupabase.supabase) {
+    return globalForSupabase.supabase;
+  }
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForSupabase.supabase = supabase;
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+  const supabaseAnonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    'placeholder';
+
+  const client = createClient(supabaseUrl, supabaseAnonKey);
+
+  if (process.env.NODE_ENV !== 'production') {
+    globalForSupabase.supabase = client;
+  }
+
+  return client;
 }
+
+export const supabase = getSupabase();
