@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-interface Unit {
+export interface Unit {
   id?: string;
   client_name: string;
   machine_model: string;
@@ -39,11 +39,14 @@ export default function FleetDashboard() {
   }, []);
 
   async function fetchUnits() {
-    const { data, error } = await supabase.from('fleet_units').select('*').order('created_at', { ascending: false });
+    const { data, error } = await (supabase.from('fleet_units') as any)
+      .select('*')
+      .order('created_at', { ascending: false });
+
     if (error) {
       console.error('Supabase Error:', error.message);
     } else if (data) {
-      setUnits(data);
+      setUnits(data as Unit[]);
     }
   }
 
@@ -51,19 +54,19 @@ export default function FleetDashboard() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.from('fleet_units').insert([
-      {
-        client_name: formData.client_name,
-        machine_model: formData.machine_model,
-        serial_number: formData.serial_number,
-        leasing_plan: formData.leasing_plan,
-        location: formData.location,
-        toner_percentage: Number(formData.toner_percentage),
-        drum_life: Number(formData.drum_life),
-        error_code: formData.error_code || null,
-        counter_total: Number(formData.counter_total),
-      },
-    ]);
+    const payload = {
+      client_name: formData.client_name,
+      machine_model: formData.machine_model,
+      serial_number: formData.serial_number,
+      leasing_plan: formData.leasing_plan,
+      location: formData.location,
+      toner_percentage: Number(formData.toner_percentage),
+      drum_life: Number(formData.drum_life),
+      error_code: formData.error_code || null,
+      counter_total: Number(formData.counter_total),
+    };
+
+    const { error } = await (supabase.from('fleet_units') as any).insert([payload]);
 
     setLoading(false);
 
@@ -82,15 +85,15 @@ export default function FleetDashboard() {
         error_code: null,
         counter_total: 0,
       });
-      fetchUnits(); // Refresh list automatically
+      fetchUnits();
     }
   }
 
   const filtered = units.filter(
     (u) =>
-      u.client_name.toLowerCase().includes(search.toLowerCase()) ||
-      u.serial_number.toLowerCase().includes(search.toLowerCase()) ||
-      u.machine_model.toLowerCase().includes(search.toLowerCase())
+      (u.client_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (u.serial_number || '').toLowerCase().includes(search.toLowerCase()) ||
+      (u.machine_model || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -140,8 +143,8 @@ export default function FleetDashboard() {
                 </td>
               </tr>
             ) : (
-              filtered.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+              filtered.map((u, idx) => (
+                <tr key={u.id || idx} className="hover:bg-gray-50 transition-colors">
                   <td className="py-4 px-4">
                     <div className="font-semibold text-gray-900">{u.client_name}</div>
                     <div className="text-xs text-gray-500">{u.machine_model}</div>
@@ -159,7 +162,7 @@ export default function FleetDashboard() {
                   <td className="py-4 px-4">
                     <ProgressBar value={u.drum_life} />
                   </td>
-                  <td className="py-4 px-4 font-mono text-xs">{u.counter_total.toLocaleString()}</td>
+                  <td className="py-4 px-4 font-mono text-xs">{(u.counter_total || 0).toLocaleString()}</td>
                   <td className="py-4 px-4">
                     {u.error_code ? (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
